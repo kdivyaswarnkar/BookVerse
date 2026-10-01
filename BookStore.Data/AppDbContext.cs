@@ -7,7 +7,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Book> Books => Set<Book>();
-    // each new ticket adds its DbSet here (Users, Orders, ...)
+    public DbSet<User> Users => Set<User>();
+    public DbSet<EmailQueueItem> EmailQueue => Set<EmailQueueItem>();
+    // each new ticket adds its DbSet here (Orders, ...)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

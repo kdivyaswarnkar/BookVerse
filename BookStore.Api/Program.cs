@@ -1,7 +1,9 @@
 using BookStore.Api.Middleware;
 using BookStore.Core.Interfaces;
+using BookStore.Core.Options;
 using BookStore.Data;
 using BookStore.Data.Repositories;
+using BookStore.Data.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -16,12 +18,16 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+// Settings from the "App" section of appsettings.json
+builder.Services.Configure<AppOptions>(builder.Configuration.GetSection("App"));
+
 // Database (EF Core)
 builder.Services.AddDbContext<AppDbContext>(o =>
     o.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
-// Repositories
+// Repositories and services
 builder.Services.AddScoped<IBookRepository, BookRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // CORS: allowed React origins come from appsettings.json ("Cors:Origins")
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
