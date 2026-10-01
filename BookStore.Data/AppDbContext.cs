@@ -8,6 +8,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Book> Books => Set<Book>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmailQueueItem> EmailQueue => Set<EmailQueueItem>();
     // each new ticket adds its DbSet here (Orders, ...)
 
