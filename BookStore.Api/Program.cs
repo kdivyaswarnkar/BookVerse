@@ -1,5 +1,8 @@
 using BookStore.Api.Middleware;
+using BookStore.Core.Interfaces;
 using BookStore.Data;
+using BookStore.Data.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +15,13 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-builder.Services.AddSingleton<DbConnectionFactory>();
+
+// Database (EF Core)
+builder.Services.AddDbContext<AppDbContext>(o =>
+    o.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+// Repositories
+builder.Services.AddScoped<IBookRepository, BookRepository>();
 
 // CORS: allowed React origins come from appsettings.json ("Cors:Origins")
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
@@ -37,11 +46,7 @@ app.UseCors("ui");
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapGet("/health/db", async (DbConnectionFactory f) =>
-{
-    using var c = f.Create();
-    var db = await Dapper.SqlMapper.ExecuteScalarAsync<string>(c, "SELECT DB_NAME()");
-    return Results.Ok(new { database = db });
-});
-//app.MapGet("/test/error", () => { throw new Exception("boom"); });
+app.MapGet("/health/db", async (AppDbContext db) =>
+    Results.Ok(new { canConnect = await db.Database.CanConnectAsync() }));
+
 app.Run();
