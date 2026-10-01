@@ -19,7 +19,9 @@ public class AuthService(
     // Used to keep login timing the same when the email does not exist
     private static readonly string DummyHash = BCrypt.Net.BCrypt.HashPassword("not-a-real-password");
 
-    // ---------- Register (BE-04) ----------
+    private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
+
+    // ---------- Register ----------
     public async Task RegisterAsync(RegisterRequest request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
@@ -27,25 +29,15 @@ public class AuthService(
         if (await db.Users.AnyAsync(u => u.Email == email))
             throw new AppException("Email already registered", 409);
 
-        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
-
         var user = new User
         {
             Name = request.Name.Trim(),
             Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            VerificationToken = token
+            VerificationToken = NewToken()
         };
         db.Users.Add(user);
-
-        var link = $"{appOptions.Value.FrontendUrl}/verify-email?token={token}";
-        db.EmailQueue.Add(new EmailQueueItem
-        {
-            ToEmail = email,
-            Subject = "Verify your BookStore email",
-            Body = $"Hi {user.Name},\n\nPlease verify your email by opening this link:\n{link}\n\n" +
-                   "If you did not create this account, you can ignore this email."
-        });
+        QueueVerificationEmail(user);
 
         try
         {
@@ -68,6 +60,21 @@ public class AuthService(
         user.EmailVerified = true;
         user.VerificationToken = null;   // a link works only once
         user.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+    }
+
+    // ---------- Resend verification email ----------
+    public async Task ResendVerificationAsync(string email)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == normalized && !u.IsDeleted);
+
+        // no such account, or already verified: do nothing, and the caller gets the same answer
+        if (user is null || user.EmailVerified) return;
+
+        user.VerificationToken = NewToken();   // the older link stops working
+        user.UpdatedAt = DateTime.UtcNow;
+        QueueVerificationEmail(user);
         await db.SaveChangesAsync();
     }
 
@@ -125,7 +132,68 @@ public class AuthService(
 
     public Task LogoutAllAsync(int userId) => RevokeAllAsync(userId);
 
+    // ---------- Forgot password ----------
+    public async Task ForgotPasswordAsync(string email)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == normalized && !u.IsDeleted);
+
+        // unknown email: do nothing, and the caller gets the same answer
+        if (user is null) return;
+
+        var rawToken = NewToken();
+        user.ResetToken = tokens.HashToken(rawToken);   // only the hash is stored
+        user.ResetTokenExpiry = DateTime.UtcNow.Add(ResetTokenLifetime);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        var link = $"{appOptions.Value.FrontendUrl}/reset-password?token={rawToken}";
+        db.EmailQueue.Add(new EmailQueueItem
+        {
+            ToEmail = user.Email,
+            Subject = "Reset your BookStore password",
+            Body = $"Hi {user.Name},\n\nWe received a request to reset your password. " +
+                   $"Open this link within {ResetTokenLifetime.TotalMinutes:0} minutes:\n{link}\n\n" +
+                   "If you did not ask for this, ignore this email. Your password will not change."
+        });
+
+        await db.SaveChangesAsync();
+    }
+
+    // ---------- Reset password ----------
+    public async Task ResetPasswordAsync(ResetPasswordRequest request)
+    {
+        var hash = tokens.HashToken(request.Token);
+        var user = await db.Users.FirstOrDefaultAsync(u =>
+            u.ResetToken == hash && u.ResetTokenExpiry > DateTime.UtcNow && !u.IsDeleted);
+
+        if (user is null)
+            throw new AppException("This reset link is invalid or has expired.", 400);
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.ResetToken = null;          // a link works only once
+        user.ResetTokenExpiry = null;
+        user.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        await RevokeAllAsync(user.Id);   // log the user out on every device
+    }
+
     // ---------- helpers ----------
+    private static string NewToken() =>
+        Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+
+    private void QueueVerificationEmail(User user)
+    {
+        var link = $"{appOptions.Value.FrontendUrl}/verify-email?token={user.VerificationToken}";
+        db.EmailQueue.Add(new EmailQueueItem
+        {
+            ToEmail = user.Email,
+            Subject = "Verify your BookStore email",
+            Body = $"Hi {user.Name},\n\nPlease verify your email by opening this link:\n{link}\n\n" +
+                   "If you did not create this account, you can ignore this email."
+        });
+    }
+
     private async Task<AuthResponse> IssueTokensAsync(User user)
     {
         var (accessToken, expiresAt) = tokens.CreateAccessToken(user);

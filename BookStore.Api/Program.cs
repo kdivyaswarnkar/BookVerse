@@ -1,6 +1,7 @@
 using System.Text;
 using BookStore.Api.Middleware;
 using BookStore.Api.OpenApi;
+using BookStore.Core.Constants;
 using BookStore.Core.Interfaces;
 using BookStore.Core.Options;
 using BookStore.Data;
@@ -45,7 +46,10 @@ builder.Services
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     });
-builder.Services.AddAuthorization();
+
+// Authorization: named rules that controllers use with [Authorize(Policy = ...)]
+builder.Services.AddAuthorization(o =>
+    o.AddPolicy(Policies.AdminOnly, p => p.RequireRole(Roles.Admin)));
 
 // Database (EF Core)
 builder.Services.AddDbContext<AppDbContext>(o =>

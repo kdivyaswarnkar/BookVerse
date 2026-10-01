@@ -27,6 +27,16 @@ public class AuthController(IAuthService auth) : ControllerBase
         return Ok(new MessageResponse("Email verified. You can now log in."));
     }
 
+    // POST api/auth/resend-verification
+    [HttpPost("resend-verification")]
+    public async Task<IActionResult> ResendVerification(EmailRequest request)
+    {
+        await auth.ResendVerificationAsync(request.Email);
+        // same answer whether or not the account exists
+        return Ok(new MessageResponse(
+            "If this account exists and is not verified yet, a new verification link has been sent."));
+    }
+
     // POST api/auth/login
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request) =>
@@ -52,6 +62,23 @@ public class AuthController(IAuthService auth) : ControllerBase
     {
         await auth.LogoutAllAsync(CurrentUserId);
         return Ok(new MessageResponse("Logged out from all devices."));
+    }
+
+    // POST api/auth/forgot-password
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(EmailRequest request)
+    {
+        await auth.ForgotPasswordAsync(request.Email);
+        // same answer whether or not the account exists
+        return Ok(new MessageResponse("If this email is registered, a password reset link has been sent."));
+    }
+
+    // POST api/auth/reset-password
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+    {
+        await auth.ResetPasswordAsync(request);
+        return Ok(new MessageResponse("Password changed. Please log in with your new password."));
     }
 
     // GET api/auth/me   (needs a valid access token)
