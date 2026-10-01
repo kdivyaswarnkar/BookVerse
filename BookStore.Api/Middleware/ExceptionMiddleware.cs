@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using BookStore.Core.Exceptions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
 namespace BookStore.Api.Middleware;
@@ -11,8 +12,12 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         {
             await next(ctx);
         }
-        // Our stored procedures raise business errors as 50001-50099
-        // (50001 = email exists, 50002 = empty cart, 50003 = no stock, ...)
+        // Expected business errors thrown from our own code (409, 401, ...)
+        catch (AppException ex)
+        {
+            await Write(ctx, ex.StatusCode, ex.Message);
+        }
+        // Business errors raised by stored procedures (50001-50099)
         catch (SqlException ex) when (ex.Number is >= 50001 and <= 50099)
         {
             await Write(ctx, ex.Number == 50001 ? 409 : 400, ex.Message);
