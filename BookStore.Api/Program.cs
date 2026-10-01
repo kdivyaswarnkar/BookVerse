@@ -1,6 +1,7 @@
 using System.Text;
 using BookStore.Api.Middleware;
 using BookStore.Api.OpenApi;
+using BookStore.Api.Services;
 using BookStore.Core.Constants;
 using BookStore.Core.Interfaces;
 using BookStore.Core.Options;
@@ -9,6 +10,7 @@ using BookStore.Data.Repositories;
 using BookStore.Data.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
@@ -51,14 +53,29 @@ builder.Services
 builder.Services.AddAuthorization(o =>
     o.AddPolicy(Policies.AdminOnly, p => p.RequireRole(Roles.Admin)));
 
+// ---------- Caching ----------
+// 1) In-memory cache (used by CachedBookRepository for categories)
+builder.Services.AddMemoryCache();
+// 2) Output cache: stores whole HTTP responses; "books" policy is used by BooksController
+builder.Services.AddOutputCache(o => o.AddPolicy("Books", p => p
+    .Expire(TimeSpan.FromMinutes(5))
+    .SetVaryByQuery("*")      // a different cache entry for every query string
+    .Tag("books")));          // lets admin APIs remove all book entries at once
+
 // Database (EF Core)
 builder.Services.AddDbContext<AppDbContext>(o =>
     o.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
 // Repositories and services
-builder.Services.AddScoped<IBookRepository, BookRepository>();
+// IBookRepository = the caching decorator wrapped around the real BookRepository
+builder.Services.AddScoped<BookRepository>();
+builder.Services.AddScoped<IBookRepository>(sp => new CachedBookRepository(
+    sp.GetRequiredService<BookRepository>(),
+    sp.GetRequiredService<IMemoryCache>()));
+builder.Services.AddScoped<IBookAdminRepository, BookAdminRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
+builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 
 // CORS: allowed React origins come from appsettings.json ("Cors:Origins")
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
@@ -79,9 +96,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();      // serves uploaded book images from wwwroot
 app.UseCors("ui");
 app.UseAuthentication();   // who are you?   (must come before UseAuthorization)
 app.UseAuthorization();    // are you allowed?
+app.UseOutputCache();      // after CORS and authorization, before the controllers
 app.MapControllers();
 
 app.MapGet("/health/db", async (AppDbContext db) =>
