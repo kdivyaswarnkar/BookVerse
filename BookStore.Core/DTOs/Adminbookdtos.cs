@@ -25,4 +25,5 @@ public class BookUpsertRequest
 
     [Range(0, 100000)]
     public int Stock { get; set; }
+
 }
