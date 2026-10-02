@@ -10,6 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmailQueueItem> EmailQueue => Set<EmailQueueItem>();
+    public DbSet<CartItem> CartItems => Set<CartItem>();
     // each new ticket adds its DbSet here (Orders, ...)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

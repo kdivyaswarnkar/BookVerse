@@ -22,6 +22,10 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         {
             await Write(ctx, ex.Number == 50001 ? 409 : 400, ex.Message);
         }
+        catch (BadHttpRequestException ex)   // NEW: e.g. 413 when an upload is too large
+        {
+            await Write(ctx, ex.StatusCode, "The request is too large or invalid.");
+        }
         catch (Exception ex)
         {
             log.LogError(ex, "Unhandled error on {Path}", ctx.Request.Path);
