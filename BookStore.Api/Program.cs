@@ -34,6 +34,11 @@ var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
 if (jwt.Key.Length < 32)
     throw new InvalidOperationException("Jwt:Key must be at least 32 characters long.");
 
+var paymentSecret = builder.Configuration["Payments:WebhookSecret"];
+if (string.IsNullOrWhiteSpace(paymentSecret) || paymentSecret.Length < 16)
+    throw new InvalidOperationException("Add Payments:WebhookSecret (16+ characters) to secrets.json.");
+builder.Services.Configure<PaymentOptions>(builder.Configuration.GetSection("Payments"));
+
 // Authentication: every request with "Authorization: Bearer <token>" is checked here
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -74,6 +79,13 @@ builder.Services.AddScoped<IBookRepository>(sp => new CachedBookRepository(
     sp.GetRequiredService<IMemoryCache>()));
 builder.Services.AddScoped<IBookAdminRepository, BookAdminRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddSingleton<FakePaymentGateway>();
+builder.Services.AddSingleton<IPaymentGateway>(sp => sp.GetRequiredService<FakePaymentGateway>());
+builder.Services.AddSingleton<IPaymentSimulator>(sp => sp.GetRequiredService<FakePaymentGateway>());
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 
