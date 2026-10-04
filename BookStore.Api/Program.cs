@@ -74,6 +74,9 @@ builder.Services.AddScoped<IBookRepository>(sp => new CachedBookRepository(
     sp.GetRequiredService<IMemoryCache>()));
 builder.Services.AddScoped<IBookAdminRepository, BookAdminRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 

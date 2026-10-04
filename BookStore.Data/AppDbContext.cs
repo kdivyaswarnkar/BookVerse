@@ -11,7 +11,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmailQueueItem> EmailQueue => Set<EmailQueueItem>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
-    // each new ticket adds its DbSet here (Orders, ...)
+    public DbSet<Address> Addresses => Set<Address>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    // each new ticket adds its DbSet here (Payments, ...)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

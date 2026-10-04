@@ -7,9 +7,7 @@ public class AddToCartRequest
 {
     [Range(1, int.MaxValue, ErrorMessage = "Choose a book.")]
     public int BookId { get; set; }
-
     [Range(1, CartRules.MaxQuantityPerItem, ErrorMessage = "Quantity must be between 1 and 10.")]
-   
     public int Quantity { get; set; } = 1;
 }
 
@@ -18,6 +16,7 @@ public class UpdateCartItemRequest
     [Range(1, CartRules.MaxQuantityPerItem, ErrorMessage = "Quantity must be between 1 and 10. To remove the book, delete the item.")]
     public int Quantity { get; set; }
 }
+
 
 public class CartItemDto
 {
