@@ -1,7 +1,7 @@
 ﻿namespace BookStore.Core.Entities;
 
 // Orders are CREATED by the stored procedure sales.sp_PlaceOrder (one safe transaction).
-// EF Core is used here to READ them.
+// EF Core is used to READ them and to change their status.
 public class Order
 {
     public int Id { get; set; }
@@ -11,6 +11,8 @@ public class Order
     public decimal DiscountAmount { get; set; }
     public string Status { get; set; } = "Pending";
     public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }          // the user (customer or admin) who last changed the order
 
     public Address Address { get; set; } = null!;
     public List<OrderItem> Items { get; set; } = new();
