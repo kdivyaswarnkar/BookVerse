@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace BookStore.Core.DTOs;
 
@@ -6,6 +6,10 @@ public class PlaceOrderRequest
 {
     [Range(1, int.MaxValue, ErrorMessage = "Choose a delivery address.")]
     public int AddressId { get; set; }
+
+    // optional: a coupon code such as WELCOME10
+    [MaxLength(30)]
+    public string? CouponCode { get; set; }
 }
 
 public record PlaceOrderResponse(int OrderId, decimal TotalAmount, string Status);

@@ -1,4 +1,5 @@
-﻿using BookStore.Core.Constants;
+using BookStore.Core.Entities;
+using BookStore.Core.Constants;
 using BookStore.Core.DTOs;
 using BookStore.Core.Exceptions;
 using BookStore.Core.Interfaces;
@@ -11,10 +12,10 @@ public class OrderService(AppDbContext db) : IOrderService
     // PLACING an order is done by the stored procedure, in ONE database transaction:
     // check address + cart, lock the books, check stock, create order and items,
     // reduce stock, empty the cart. If anything fails, nothing is saved.
-    public async Task<PlaceOrderResponse> PlaceOrderAsync(int userId, int addressId)
+    public async Task<PlaceOrderResponse> PlaceOrderAsync(int userId, int addressId, string? couponCode = null)
     {
         var rows = await db.Database
-            .SqlQuery<PlaceOrderRow>($"EXEC sales.sp_PlaceOrder {userId}, {addressId}")   // values are sent as parameters
+            .SqlQuery<PlaceOrderRow>($"EXEC sales.sp_PlaceOrder {userId}, {addressId}, {couponCode}")   // values are sent as parameters
             .ToListAsync();
 
         var row = rows.Single();
@@ -99,6 +100,15 @@ public class OrderService(AppDbContext db) : IOrderService
         if (rows == 0)
             throw new AppException(
                 "Only an order that is still Pending can be cancelled. A paid order needs a refund, which is not built yet.", 400);
+
+        // give the coupon use back (the order never completed, so the coupon was not really spent)
+        var couponId = await db.Orders.Where(o => o.Id == orderId).Select(o => o.CouponId).FirstAsync();
+        if (couponId is not null)
+        {
+            await db.Set<Coupon>()
+                .Where(c => c.Id == couponId && c.UsedCount > 0)
+                .ExecuteUpdateAsync(s => s.SetProperty(c => c.UsedCount, c => c.UsedCount - 1));
+        }
 
         var items = await db.OrderItems
             .Where(i => i.OrderId == orderId)
