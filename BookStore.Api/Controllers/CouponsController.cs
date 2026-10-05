@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using BookStore.Api.Extensions;
 using BookStore.Core.Constants;
 using BookStore.Core.DTOs;
@@ -12,6 +13,7 @@ namespace BookStore.Api.Controllers;
 public class CouponsController(ICouponService coupons) : ControllerBase
 {
     // POST api/coupons/preview   { "code": "WELCOME10" }   (customer: price check, nothing is used up)
+    [EnableRateLimiting(RateLimitPolicies.Checkout)]
     [HttpPost("api/coupons/preview")]
     [Authorize]
     public async Task<ActionResult<CouponPreviewDto>> Preview(PreviewCouponRequest request) =>

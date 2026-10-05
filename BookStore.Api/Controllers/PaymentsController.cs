@@ -1,4 +1,6 @@
-﻿using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
+using BookStore.Core.Constants;
+using System.Text;
 using BookStore.Api.Extensions;
 using BookStore.Core.DTOs;
 using BookStore.Core.Exceptions;
@@ -15,6 +17,7 @@ public class PaymentsController(IPaymentService payments) : ControllerBase
 {
     // POST api/payments/create     { "orderId": 12 }
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.Checkout)]
     [HttpPost("create")]
     public async Task<ActionResult<CreatePaymentResponse>> Create(CreatePaymentRequest request) =>
         Ok(await payments.CreatePaymentAsync(User.GetUserId(), request.OrderId));
