@@ -15,7 +15,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Payment> Payments => Set<Payment>();
-    // each new ticket adds its DbSet here (Reviews, Wishlist, Coupons, ...)
+    public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<WishlistItem> Wishlist => Set<WishlistItem>();
+    // each new ticket adds its DbSet here (Coupons, ...)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
