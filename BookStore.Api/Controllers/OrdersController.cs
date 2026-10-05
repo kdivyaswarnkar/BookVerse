@@ -37,4 +37,16 @@ public class OrdersController(IOrderService orders, IOutputCacheStore outputCach
         var order = await orders.GetAsync(User.GetUserId(), id);
         return order is null ? NotFound() : Ok(order);
     }
+
+    // POST api/orders/12/cancel     (only while the order is still Pending)
+    [HttpPost("{id:int}/cancel")]
+    public async Task<IActionResult> Cancel(int id, CancellationToken ct)
+    {
+        await orders.CancelAsync(User.GetUserId(), id);
+
+        // the stock came back
+        await outputCache.EvictByTagAsync("books", ct);
+
+        return NoContent();
+    }
 }
