@@ -1,4 +1,5 @@
 using BookStore.Api.BackgroundJobs;
+using BookStore.Api.Extensions;
 using BookStore.Api.Middleware;
 using BookStore.Api.OpenApi;
 using BookStore.Api.Services;
@@ -89,7 +90,7 @@ builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<ICouponService, CouponService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<JobsOptions>(builder.Configuration.GetSection("Jobs"));
-
+builder.Services.AddAppRateLimiting(builder.Configuration);
 if (builder.Configuration["Email:Provider"] == "Smtp")
     builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 else
@@ -128,11 +129,11 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();      // serves uploaded book images from wwwroot
 app.UseCors("ui");
 app.UseAuthentication();   // who are you?   (must come before UseAuthorization)
+app.UseRateLimiter();
 app.UseAuthorization();    // are you allowed?
 app.UseOutputCache();      // after CORS and authorization, before the controllers
 app.MapControllers();
-
 app.MapGet("/health/db", async (AppDbContext db) =>
-    Results.Ok(new { canConnect = await db.Database.CanConnectAsync() }));
+    Results.Ok(new { canConnect = await db.Database.CanConnectAsync() })).DisableRateLimiting();
 
 app.Run();

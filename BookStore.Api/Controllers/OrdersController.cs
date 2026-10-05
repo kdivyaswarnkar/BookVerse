@@ -1,3 +1,5 @@
+using BookStore.Core.Constants;
+using Microsoft.AspNetCore.RateLimiting;
 using BookStore.Api.Extensions;
 using BookStore.Core.DTOs;
 using BookStore.Core.Interfaces;
@@ -14,6 +16,7 @@ namespace BookStore.Api.Controllers;
 public class OrdersController(IOrderService orders, IOutputCacheStore outputCache) : ControllerBase
 {
     // POST api/orders      { "addressId": 3, "couponCode": "WELCOME10" }   (couponCode is optional)   (the order is made from the current cart)
+    [EnableRateLimiting(RateLimitPolicies.Checkout)]
     [HttpPost]
     public async Task<ActionResult<PlaceOrderResponse>> Place(PlaceOrderRequest request, CancellationToken ct)
     {

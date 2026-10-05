@@ -2,4 +2,5 @@
   <Project Path="BookStore.Api/BookStore.Api.csproj" />
   <Project Path="BookStore.Core/BookStore.Core.csproj" />
   <Project Path="BookStore.Data/BookStore.Data.csproj" />
+  <Project Path="BookStore.Testss/BookStore.Tests.csproj" Id="000837a4-c30e-455a-a9f8-146d09a93ae4" />
 </Solution>

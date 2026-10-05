@@ -1,4 +1,6 @@
-﻿using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
+using BookStore.Core.Constants;
+using System.Security.Claims;
 using BookStore.Core.DTOs;
 using BookStore.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +13,7 @@ namespace BookStore.Api.Controllers;
 public class AuthController(IAuthService auth) : ControllerBase
 {
     // POST api/auth/register
+    [EnableRateLimiting(RateLimitPolicies.Email)]
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
@@ -20,6 +23,7 @@ public class AuthController(IAuthService auth) : ControllerBase
     }
 
     // POST api/auth/verify-email   (the React page calls this with the token from the email link)
+    [EnableRateLimiting(RateLimitPolicies.Login)]
     [HttpPost("verify-email")]
     public async Task<IActionResult> VerifyEmail(VerifyEmailRequest request)
     {
@@ -28,6 +32,7 @@ public class AuthController(IAuthService auth) : ControllerBase
     }
 
     // POST api/auth/resend-verification
+    [EnableRateLimiting(RateLimitPolicies.Email)]
     [HttpPost("resend-verification")]
     public async Task<IActionResult> ResendVerification(EmailRequest request)
     {
@@ -38,11 +43,13 @@ public class AuthController(IAuthService auth) : ControllerBase
     }
 
     // POST api/auth/login
+    [EnableRateLimiting(RateLimitPolicies.Login)]
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request) =>
         Ok(await auth.LoginAsync(request));
 
     // POST api/auth/refresh
+    [EnableRateLimiting(RateLimitPolicies.Login)]
     [HttpPost("refresh")]
     public async Task<ActionResult<AuthResponse>> Refresh(RefreshTokenRequest request) =>
         Ok(await auth.RefreshAsync(request.RefreshToken));
@@ -65,6 +72,7 @@ public class AuthController(IAuthService auth) : ControllerBase
     }
 
     // POST api/auth/forgot-password
+    [EnableRateLimiting(RateLimitPolicies.Email)]
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword(EmailRequest request)
     {
@@ -74,6 +82,7 @@ public class AuthController(IAuthService auth) : ControllerBase
     }
 
     // POST api/auth/reset-password
+    [EnableRateLimiting(RateLimitPolicies.Login)]
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
     {
