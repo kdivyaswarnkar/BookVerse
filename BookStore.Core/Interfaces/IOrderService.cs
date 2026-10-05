@@ -1,10 +1,10 @@
-﻿using BookStore.Core.DTOs;
+using BookStore.Core.DTOs;
 
 namespace BookStore.Core.Interfaces;
 
 public interface IOrderService
 {
-    Task<PlaceOrderResponse> PlaceOrderAsync(int userId, int addressId);
+    Task<PlaceOrderResponse> PlaceOrderAsync(int userId, int addressId, string? couponCode = null);
     Task<List<OrderSummaryDto>> ListAsync(int userId);
     Task<OrderDetailDto?> GetAsync(int userId, int orderId);
 

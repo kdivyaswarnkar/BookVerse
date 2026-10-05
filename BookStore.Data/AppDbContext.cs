@@ -1,4 +1,4 @@
-﻿using BookStore.Core.Entities;
+using BookStore.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Data;
@@ -17,7 +17,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<WishlistItem> Wishlist => Set<WishlistItem>();
-    // each new ticket adds its DbSet here (Coupons, ...)
+    public DbSet<Coupon> Coupons => Set<Coupon>();
+    // each new ticket adds its DbSet here
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,4 +1,4 @@
-﻿using BookStore.Api.Extensions;
+using BookStore.Api.Extensions;
 using BookStore.Core.DTOs;
 using BookStore.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -13,11 +13,11 @@ namespace BookStore.Api.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]   // private data
 public class OrdersController(IOrderService orders, IOutputCacheStore outputCache) : ControllerBase
 {
-    // POST api/orders      { "addressId": 3 }   (the order is made from the current cart)
+    // POST api/orders      { "addressId": 3, "couponCode": "WELCOME10" }   (couponCode is optional)   (the order is made from the current cart)
     [HttpPost]
     public async Task<ActionResult<PlaceOrderResponse>> Place(PlaceOrderRequest request, CancellationToken ct)
     {
-        var result = await orders.PlaceOrderAsync(User.GetUserId(), request.AddressId);
+        var result = await orders.PlaceOrderAsync(User.GetUserId(), request.AddressId, request.CouponCode);
 
         // stock has changed, so cached book pages are out of date
         await outputCache.EvictByTagAsync("books", ct);

@@ -85,6 +85,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IOrderAdminService, OrderAdminService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
+builder.Services.AddScoped<ICouponService, CouponService>();
 builder.Services.AddSingleton<FakePaymentGateway>();
 builder.Services.AddSingleton<IPaymentGateway>(sp => sp.GetRequiredService<FakePaymentGateway>());
 builder.Services.AddSingleton<IPaymentSimulator>(sp => sp.GetRequiredService<FakePaymentGateway>());
